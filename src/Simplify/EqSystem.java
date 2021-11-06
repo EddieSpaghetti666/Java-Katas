@@ -5,86 +5,53 @@ import java.util.stream.Collectors;
 
 class EqSystem {
 
-    interface Symbol {
-    }
-
-    private static class Factor implements Symbol {
-        Character symbol;
-        int coefficient;
-
-        Factor(Character symbol, int coeff) {
-            this.symbol = symbol;
-            this.coefficient = coeff;
-        }
-
-        @Override
-        public String toString() {
-            return Integer.toString(coefficient) + symbol;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof Factor)) return false;
-            Factor o = (Factor) obj;
-            return this.symbol == o.symbol && this.coefficient == o.coefficient;
-        }
-
-        @Override
-        public int hashCode() {
-            return symbol + coefficient;
-        }
-    }
-
-    private static class Operator implements Symbol {
-        Character operator;
-
-        Operator(Character operator) {
-            this.operator = operator;
-        }
-
-        @Override
-        public String toString() {
-            return operator.toString();
-        }
-    }
-
     static String simplify(String[] examples, String formula) {
-        Map<Factor, List<Symbol>> equations = buildEquationMap(examples);
-        formula = formula.replaceAll(" ", "");
-        List<Symbol> equation = stringToSymbolList(formula);
-        System.out.println(equation);
+        Map<Character, String> equations = buildEquationMap(examples);
+        System.out.println(equations);
+        String expandedEq = expandEquation(formula, equations).replaceAll(" ", "");
+        System.out.println(expandedEq);
+
         return null;
     }
 
+    private static String getFinalTerm(String expandedEq){
+        char symbol = '0';
+        int coefficient = 0;
+        for(char c : expandedEq.toCharArray()){
+            if(Character.isAlphabetic(c)){
+                symbol = c;
+                coefficient++;
+            }
+            if(Character.isDigit(c)){
+                coefficient += Character.getNumericValue(c) - 1;
+            }
+        }
+        return Integer.toString(coefficient) + symbol;
 
-    private static Map<Factor, List<Symbol>> buildEquationMap(String[] examples) {
-        Map<Factor, List<Symbol>> equations = new HashMap<>();
+
+
+    }
+
+    private static String expandEquation(String equation, Map<Character, String> substitutions){
+        for(char c : equation.toCharArray()){
+            if(substitutions.containsKey(c)){
+                equation = equation.replaceAll(Character.toString(c),substitutions.get(c));
+                return expandEquation(equation, substitutions);
+            }
+        }
+        return equation;
+    }
+
+    private static Map<Character, String> buildEquationMap(String[] examples) {
+        Map<Character, String> equations = new HashMap<>();
         for (String example : examples) {
             example = example.replaceAll(" ", "");
             String[] sides = example.split("=");
-            List<Symbol> lhsSymbols = stringToSymbolList(sides[0]);
-            equations.put(new Factor(sides[1].charAt(0), 1), lhsSymbols);
+            equations.put(sides[1].charAt(0), "(" + sides[0] + ")");
         }
         return equations;
 
     }
 
-    private static List<Symbol> stringToSymbolList(String str) {
-        List<Symbol> symbols = new ArrayList<>();
-        for (int i = 0; i < str.length(); i++) {
-            char current = str.charAt(i);
-            if (current == '+' || current == '-') {
-                symbols.add(new Operator(current));
-            } else if (Character.isDigit(current)) {
-                int coefficient = Character.getNumericValue(current);
-                Character symbol = str.charAt(++i);
-                symbols.add(new Factor(symbol, coefficient));
-            } else {
-                Factor factor = new Factor(current, 1);
-                symbols.add(new Factor(current, 1));
-            }
 
-        }
-        return symbols;
-    }
 }
